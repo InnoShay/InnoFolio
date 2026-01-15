@@ -20,6 +20,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<{ error: Error | null }>;
     signOut: () => Promise<void>;
     updateProfile: (data: Partial<Profile>) => Promise<{ error: Error | null }>;
+    refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +30,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const fetchProfile = async (userId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", userId)
+                .single();
+
+            if (!error && data) {
+                setProfile(data);
+            } else {
+                // Profile might not exist yet, that's okay
+                setProfile(null);
+            }
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+        }
+    };
+
+    const refreshProfile = async () => {
+        if (user) {
+            await fetchProfile(user.id);
+        }
+    };
 
     useEffect(() => {
         // Get initial session
@@ -44,8 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
+                console.log("Auth state changed:", event);
                 setSession(session);
                 setUser(session?.user ?? null);
+
                 if (session?.user) {
                     await fetchProfile(session.user.id);
                 } else {
@@ -58,22 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchProfile = async (userId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", userId)
-                .single();
-
-            if (!error && data) {
-                setProfile(data);
-            }
-        } catch (error) {
-            console.error("Error fetching profile:", error);
-        }
-    };
-
     const signUp = async (email: string, password: string, fullName?: string) => {
         try {
             const { error, data } = await supabase.auth.signUp({
@@ -84,15 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 },
             });
 
-            if (!error && data.user) {
-                // Create profile
-                await supabase.from("profiles").upsert({
-                    id: data.user.id,
-                    full_name: fullName,
-                });
+            if (error) {
+                return { error: error as Error };
             }
 
-            return { error: error as Error | null };
+            // Profile is auto-created by database trigger
+            return { error: null };
         } catch (error) {
             return { error: error as Error };
         }
@@ -161,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 signInWithGoogle,
                 signOut,
                 updateProfile,
+                refreshProfile,
             }}
         >
             {children}
