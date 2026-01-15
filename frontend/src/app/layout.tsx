@@ -1,32 +1,33 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
+import { Sidebar } from "@/components/Sidebar";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: "swap",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "InnoFolio - AI Career Coach",
-  description: "Your AI-powered career coach for resume guidance, interview prep, job search tips, and career development.",
-  keywords: ["career coach", "resume help", "interview preparation", "job search", "AI assistant"],
-  authors: [{ name: "InnoFolio" }],
-  openGraph: {
-    title: "InnoFolio - AI Career Coach",
-    description: "Get personalized career guidance powered by AI",
-    type: "website",
-  },
+  description: "Your personal AI-powered career coach for resume tips, interview prep, and job search strategies.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          <div className="app-container">
+            <Sidebar />
+            <main className="main-content">
+              {children}
+            </main>
+          </div>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
