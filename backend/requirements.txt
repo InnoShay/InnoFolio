@@ -1,0 +1,31 @@
+# Core dependencies
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-dotenv>=1.0.1
+pydantic>=2.8.0
+pydantic-settings>=2.4.0
+
+# Google Gemini (core SDK only)
+google-generativeai
+
+# Vector store
+chromadb
+
+# HTTP client
+httpx>=0.27.0
+
+# Database
+supabase
+
+# Authentication
+python-jose[cryptography]
+
+# File processing
+pypdf
+python-docx
+python-multipart
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.23.0
+email-validator
